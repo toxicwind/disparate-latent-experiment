@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# disparate-latent-experiment — self-test gate (PASS/FAIL).
+# Results repo: experiment output only (no source tree). Gate = the proof
+# leaderboard, matrix parquet, and telemetry JSON exist and parse.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+PY="${PY:-python3}"
+
+echo "== disparate-latent-experiment check: start =="
+for f in output/disparate_proof_leaderboard.md \
+         output/disparate_proof_matrix.parquet \
+         output/socket_density_telemetry.json; do
+  [ -f "$f" ] || { echo "FAIL: $f missing"; exit 1; }
+done
+echo "OK  all 3 output artifacts present"
+
+set +e
+out="$("$PY" - <<'EOF' 2>&1)
+import json
+json.load(open('output/socket_density_telemetry.json'))
+print("telemetry JSON parses OK")
+EOF
+)"
+rc=$?
+set -e
+echo "$out"
+[ "$rc" -eq 0 ] || { echo "FAIL: telemetry JSON rc=$rc"; exit 1; }
+
+echo "== disparate-latent-experiment check: PASS =="
+exit 0
